@@ -10,25 +10,56 @@
     .wrap { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
     .card { border:1px solid #ddd; border-radius:10px; padding:1rem; }
     .tag { border:1px solid #ccc; border-radius:999px; padding:2px 6px; margin-right:4px; }
+    .muted { color:#666; }
+    pre { white-space: pre-wrap; word-wrap: break-word; margin: .5rem 0 0; }
+    button { padding:.5rem .9rem; border-radius:8px; border:1px solid #ccc; background:#fafafa; cursor:pointer; }
+    button[disabled] { opacity:.5; cursor:not-allowed; }
   </style>
 </head>
 <body>
   <h1>Определение эмоций в реальном времени</h1>
+
+  <!-- Видеопоток и эмоции -->
   <div class="wrap">
     <div class="card">
       <video id="video" autoplay playsinline></video>
       <br />
       <button id="startBtn">Старт</button>
       <button id="stopBtn" disabled>Стоп</button>
-      <span id="status"></span>
+      <span id="status" class="muted"></span>
     </div>
     <div class="card">
-      <h3>Результат</h3>
+      <h3>Результат (эмоции)</h3>
       <div id="emotion">—</div>
       <div id="probs"></div>
       <canvas id="canvas" style="display:none;"></canvas>
     </div>
+
+    <!-- Новый блок: распознавание речи -->
+    <div class="card">
+      <h3>Распознавание речи</h3>
+      <p class="muted" style="margin-top:0">Включите микрофон — транскрипт появится ниже.</p>
+      <div style="margin-top:1rem">
+        <label>Микрофон:
+          <select id="micSelect"></select>
+        </label>
+      </div>
+
+      <button id="micStart">🎙️ Старт микрофон</button>
+      <button id="micStop" disabled>Стоп</button>
+      <div style="margin-top:.75rem">
+        <strong>Промежуточно:</strong>
+        <span id="speech-partial" class="muted"></span>
+      </div>
+      <div style="margin-top:.5rem">
+        <strong>Готово:</strong>
+        <pre id="speech-final"></pre>
+      </div>
+    </div>
+    <!-- Пустая карточка для выравнивания сетки -->
+    <div class="card" style="display:none"></div>
   </div>
+
   <script src="/static/client.js"></script>
 </body>
 </html>

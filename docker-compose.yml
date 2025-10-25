@@ -42,11 +42,30 @@ services:
       KAFKA_BOOTSTRAP_SERVERS: kafka:29092
       KAFKA_FRAMES_TOPIC: frames
       KAFKA_PREDICTIONS_TOPIC: emotions
+      KAFKA_AUDIO_TOPIC: audio               # NEW
+      KAFKA_TRANSCRIPTS_TOPIC: transcripts   # NEW
       APP_HOST: 0.0.0.0
       APP_PORT: 8000
     ports:
       - "8000:8000"
     restart: unless-stopped
+    
+  speech-recognition:
+      build: ./services/speech-recognition
+      container_name: speech-recognition
+      depends_on:
+        kafka:
+          condition: service_healthy
+      environment:
+        KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+        KAFKA_AUDIO_TOPIC: audio
+        KAFKA_TRANSCRIPTS_TOPIC: transcripts
+        # Можно переключить на «большую» модель:
+        # VOSK_MODEL_URL: https://alphacephei.com/vosk/models/vosk-model-ru-0.22.zip
+        VOSK_MODEL_URL: https://alphacephei.com/vosk/models/vosk-model-small-ru-0.22.zip
+      volumes:
+        - asr-model:/app/model
+      restart: unless-stopped
 
   worker:
     build:
@@ -67,4 +86,4 @@ services:
 
 volumes:
   kafka-data:
-
+  asr-model:
