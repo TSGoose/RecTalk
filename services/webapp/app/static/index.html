@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Эмоции с веб-камеры</title>
+  <style>
+    body { font-family: system-ui; margin: 2rem; }
+    video, canvas { width: 100%; border-radius: 12px; background:#000; }
+    .wrap { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+    .card { border:1px solid #ddd; border-radius:10px; padding:1rem; }
+    .tag { border:1px solid #ccc; border-radius:999px; padding:2px 6px; margin-right:4px; }
+  </style>
+</head>
+<body>
+  <h1>Определение эмоций в реальном времени</h1>
+  <div class="wrap">
+    <div class="card">
+      <video id="video" autoplay playsinline></video>
+      <br />
+      <button id="startBtn">Старт</button>
+      <button id="stopBtn" disabled>Стоп</button>
+      <span id="status"></span>
+    </div>
+    <div class="card">
+      <h3>Результат</h3>
+      <div id="emotion">—</div>
+      <div id="probs"></div>
+      <canvas id="canvas" style="display:none;"></canvas>
+    </div>
+  </div>
+  <script src="/static/client.js"></script>
+</body>
+</html>
+

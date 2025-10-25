@@ -1,0 +1,106 @@
+# =========================
+# Python / FastAPI / Docker project
+# =========================
+
+# --- Python ---
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+*.egg
+*.egg-info/
+.eggs/
+*.log
+*.out
+*.tmp
+*.bak
+*.swp
+*.swo
+*.orig
+*.DS_Store
+
+# --- Virtualenv / Poetry / Pipenv ---
+.venv/
+venv/
+env/
+ENV/
+pip-wheel-metadata/
+*.whl
+poetry.lock
+
+# --- IDE / Editor stuff ---
+.vscode/
+.idea/
+*.iml
+*.code-workspace
+*.sublime-project
+*.sublime-workspace
+
+# --- Jupyter / Notebooks ---
+.ipynb_checkpoints/
+*.ipynb
+
+# --- Docker ---
+# временные артефакты и слои
+**/.docker/
+**/.cache/
+**/.pytest_cache/
+**/__pycache__/
+.dockerignore
+
+# не коммитим локальные volume-данные
+volumes/
+kafka-data/
+data/
+tmp/
+logs/
+*.pid
+
+# --- Environment / Secrets ---
+.env
+.env.*
+*.key
+*.pem
+*.crt
+*.cer
+*.der
+*.p12
+*.jks
+
+# --- Models & large binaries ---
+# локальные веса моделей (скачиваются в Dockerfile)
+models/
+services/worker/models/
+services/worker/face/
+*.onnx
+*.caffemodel
+*.prototxt
+
+# --- Node / Web assets ---
+services/webapp/node_modules/
+services/webapp/.next/
+services/webapp/dist/
+services/webapp/build/
+*.map
+
+# --- OS / Misc ---
+Thumbs.db
+.DS_Store
+ehthumbs.db
+desktop.ini
+
+# --- Tests / coverage ---
+.coverage
+htmlcov/
+.tox/
+pytest_cache/
+.cache/
+.mypy_cache/
+.pytest_cache/
+
+# --- Editor backup ---
+*~
+*.tmp
+*.bak
+

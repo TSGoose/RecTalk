@@ -1,0 +1,6 @@
+aiokafka==0.10.0
+orjson==3.10.7
+numpy==1.26.4
+opencv-python-headless==4.10.0.84
+onnxruntime==1.18.0
+

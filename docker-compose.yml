@@ -1,0 +1,72 @@
+services:
+  kafka:
+    image: confluentinc/cp-kafka:7.7.6
+    container_name: kafka
+    environment:
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_NODE_ID: 1
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092,PLAINTEXT_INTERNAL://0.0.0.0:29092,CONTROLLER://0.0.0.0:29093
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092,PLAINTEXT_INTERNAL://kafka:29092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_INTERNAL:PLAINTEXT,CONTROLLER:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT_INTERNAL
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:29093
+      CLUSTER_ID: MkU3OEVBNTcwNTJENDM2Qk
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_MIN_INSYNC_REPLICAS: 1
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+      KAFKA_LOG_DIRS: /var/lib/kafka/data
+      KAFKA_BROKER_ID: 1
+    volumes:
+      - kafka-data:/var/lib/kafka/data
+    ports:
+      - "9092:9092"
+      - "29092:29092"
+    healthcheck:
+      test: ["CMD-SHELL", "kafka-broker-api-versions --bootstrap-server localhost:9092 >/dev/null 2>&1"]
+      interval: 5s
+      timeout: 5s
+      retries: 60
+      start_period: 25s
+    restart: unless-stopped
+
+  webapp:
+    build: ./services/webapp
+    container_name: webapp
+    depends_on:
+      kafka:
+        condition: service_healthy
+    environment:
+      KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+      KAFKA_FRAMES_TOPIC: frames
+      KAFKA_PREDICTIONS_TOPIC: emotions
+      APP_HOST: 0.0.0.0
+      APP_PORT: 8000
+    ports:
+      - "8000:8000"
+    restart: unless-stopped
+
+  worker:
+    build:
+      context: ./services/worker
+      dockerfile: Dockerfile
+    container_name: worker
+    depends_on:
+      kafka:
+        condition: service_healthy
+    environment:
+      KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+      KAFKA_FRAMES_TOPIC: frames
+      KAFKA_PREDICTIONS_TOPIC: emotions
+      EMOTION_ONNX_PATH: /models/emotion-ferplus.onnx
+      AIOKAFKA_FETCH_MAX_BYTES: "10485760"
+      AIOKAFKA_MAX_REQUEST_SIZE: "10485760"
+    volumes:
+      - ./services/worker/models:/models:ro
+    restart: unless-stopped
+
+volumes:
+  kafka-data:
+
