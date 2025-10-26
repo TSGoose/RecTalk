@@ -1,5 +1,5 @@
 (async function () {
-  // ==== VIDEO (без изменений) ====
+  // ==== VIDEO (как было) ====
   const video = document.getElementById('video');
   const canvas = document.getElementById('canvas');
   const ctx = canvas.getContext('2d');
@@ -65,6 +65,17 @@
   let awHadSignal = false;
   let fallbackTimer;
 
+  let lastFinalText = "";      // последняя финальная распознавалка, уже показанная как "→ ..."
+  let awaitingAnswer = false;  // ждём ли ответ для lastFinalText
+  function norm(s) { return (s || "").trim().replace(/\s+/g, " "); }
+
+  // утилита для добавления строк в итоговый блок
+  function appendDialog(lines) {
+    const text = Array.isArray(lines) ? lines.join('\n') : String(lines || '');
+    if (!text) return;
+    speechFinal.textContent += (speechFinal.textContent ? '\n' : '') + text;
+  }
+
   // Список микрофонов
   async function listMicrophones() {
     try {
@@ -90,7 +101,6 @@
     }
   }
 
-  // Запрос прав — после первого gUM браузер начнёт возвращать label'ы
   try { await navigator.mediaDevices.getUserMedia({ audio: true }); } catch {}
   await listMicrophones();
 
@@ -99,26 +109,68 @@
     wsSpeech.binaryType = 'arraybuffer';
     wsSpeech.onmessage = e => {
       let d; try { d = JSON.parse(e.data); } catch { return; }
+
       if (d.type === 'speech') {
         if (d.is_final) {
-          if (d.text) speechFinal.textContent += (speechFinal.textContent ? '\n' : '') + d.text;
+          if (d.text) {
+            const t = norm(d.text);
+            appendDialog(`→ ${t}`);
+            lastFinalText = t;         // 👈 запоминаем, что уже показали
+            awaitingAnswer = true;     // 👈 теперь ждём ответ
+          }
           speechPartial.textContent = '';
         } else {
           speechPartial.textContent = d.text || '';
         }
-      } else if (d.type === 'speech_debug') {
-        // опционально: отобразить телеметрию
+        return;
+      }
+
+      if (d.type === 'answer') {
+        const req = norm(d.request || d.text || '');
+        const ans = d.answer || '';
+
+        // 👇 не дублируем вопрос, если это тот же финальный текст, который мы уже показали
+        if (!(awaitingAnswer && lastFinalText && req && req === lastFinalText)) {
+          if (req) appendDialog(`→ ${req}`);
+        }
+        if (ans) appendDialog(`← ${ans}`);
+
+        // сброс ожидания; следующий финал начнёт новый цикл
+        awaitingAnswer = false;
+        lastFinalText = "";
+        return;
+      }
+
+      if (d.type === 'speech_with_answer') {
+        const req = norm(d.request || d.text || '');
+        const ans = d.answer || '';
+        const lines = [];
+
+        // 👇 аналогично: не дублируем, если это тот же показанный финал
+        if (!(awaitingAnswer && lastFinalText && req && req === lastFinalText)) {
+          if (req) lines.push(`→ ${req}`);
+        }
+        if (ans) lines.push(`← ${ans}`);
+
+        appendDialog(lines);
+        awaitingAnswer = false;
+        lastFinalText = "";
+        return;
+      }
+
+      if (d.type === 'speech_debug') {
         console.debug('speech_debug', d);
+        return;
       }
     };
   }
+
 
   async function startMic() {
     micStart.disabled = true; micStop.disabled = false;
 
     openSpeechWS();
 
-    // Микшер: на время диагностики — без шумодава/AGC/эхо
     mediaStream = await navigator.mediaDevices.getUserMedia({
       audio: {
         deviceId: selectedDeviceId ? { exact: selectedDeviceId } : undefined,
@@ -129,7 +181,6 @@
       }
     });
 
-    // Аудиоконтекст и ворклет
     audioCtx = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 48000 });
     await audioCtx.audioWorklet.addModule('/static/pcm-worklet.js?v=5');
     await audioCtx.resume();
@@ -164,7 +215,6 @@
       }
     };
 
-    // Если за секунду сигнал так и не появился — включаем fallback
     clearTimeout(fallbackTimer);
     awHadSignal = false;
     fallbackTimer = setTimeout(() => {
@@ -175,7 +225,6 @@
       }
     }, 1000);
 
-    // Для UI: показать текущие настройки трека
     const track = mediaStream.getAudioTracks()[0];
     console.debug('gUM settings:', track && track.getSettings());
     track && (track.enabled = true);
@@ -204,7 +253,6 @@
       while (off + frameIn <= merged.length) {
         const frame = merged.subarray(off, off + frameIn);
 
-        // даунсемпл до 16k (простой усреднитель)
         const ratio = ctx.sampleRate / outRate;
         const newLen = Math.floor(frame.length / ratio);
         const ds = new Float32Array(newLen);
@@ -217,7 +265,6 @@
           ob = nob;
         }
 
-        // PCM16LE
         const ab = new ArrayBuffer(ds.length * 2);
         const view = new DataView(ab);
         for (let i = 0; i < ds.length; i++) {
