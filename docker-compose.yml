@@ -87,6 +87,16 @@ services:
       start_period: 25s
     restart: unless-stopped
 
+  call-front:
+    build: ./services/call-front
+    container_name: call-front
+    depends_on:
+      webapp:
+        condition: service_started
+    ports:
+      - "5173:5173"   
+    restart: unless-stopped
+
   webapp:
     build: ./services/webapp
     container_name: webapp
